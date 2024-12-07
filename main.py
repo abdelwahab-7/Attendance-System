@@ -10,7 +10,7 @@ from keras_facenet import FaceNet
 
 
 # Initialization
-facnet = FaceNet()
+facenet = FaceNet()
 faces_embeddings = np.load("faces_embeddings_done_4classes.npz")
 
 Y = faces_embeddings["arr_1"]
@@ -20,7 +20,7 @@ haarcascade = cv.CascadeClassifier("haarcascade_frontalface_default.xml")
 
 model = pickle.load(open("svm_model_160x160.pkl", "rb"))
 
-cap = cv.VideoCapture()
+cap = cv.VideoCapture(0)
 
 
 while cap.isOpened():
@@ -32,4 +32,27 @@ while cap.isOpened():
     for x, y, w, h in faces:
         img = rgb_img[y : y + h, x : x + w]
         img = cv.resize(img, (160, 160))  # 160x160x3
-        # img =
+        img = np.expand_dims(img, axis=0)  # Nonex160x160x3
+
+        ypred = facenet.embeddings(img)
+        face_name = model.predict(ypred)
+        final_name = encoder.inverse_transform(face_name)[0]
+
+        cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 10)
+        cv.putText(
+            frame,
+            str(final_name),
+            (x, y - 10),
+            cv.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 255),
+            3,
+            cv.LINE_AA,
+        )
+
+    cv.imshow("Face Recognition:", frame)
+    if cv.waitKey(1) & ord("q") == 27:
+        break
+
+cap.release()
+cv.destroyAllWindows
